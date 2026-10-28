@@ -92,7 +92,7 @@ textarea{width:100%;box-sizing:border-box;background:var(--forest);border:1px so
       <input id="ask" type="text" class="grow" autocomplete="off" autocorrect="off" enterkeyhint="search" placeholder="Question appears here…">
       <button class="btn ghost" id="clearAsk">Clear</button>
     </div>
-    <div class="mic"><span class="dot" id="micDot"></span><span id="micText">Plug in your headset, then tap Start listening.</span></div>
+    <div class="mic"><span class="dot" id="micDot"></span><span id="micText">Optional: some phones can listen without the keyboard.</span></div>
     <button class="btn big" id="listenBtn">🎧 Hands-free listening (if your phone allows it)</button>
     <div class="settings">
       <label for="speak"><input type="checkbox" id="speak"> Speak answers</label>
@@ -129,22 +129,30 @@ function rebuildIndex(){
   const N=docs.length||1;idf={};for(const w in df)idf[w]=Math.log(1+N/df[w]);
   $("nCards").textContent=mat.cards.length;$("nFacts").textContent=mat.facts.length;
 }
-function score(qw,docWords){
-  const d=new Set(docWords);let hit=0,tot=0;
-  qw.forEach(w=>{const v=idf[w]||1;tot+=v;if(d.has(w))hit+=v});
+function rawWords(s){return String(s).toLowerCase().replace(/[^a-z0-9\s']/g," ").split(/\s+/).filter(Boolean)}
+function docSet(text){
+  const set=new Set(words(text)),r=rawWords(text);
+  for(let i=0;i<r.length-1;i++)set.add(stem(r[i]+r[i+1]));
+  return set;
+}
+function score(qText,qw,dText){
+  const d=docSet(dText);const r=rawWords(qText);const hitW=new Set();
+  qw.forEach(w=>{if(d.has(w))hitW.add(w)});
+  for(let i=0;i<r.length-1;i++){if(d.has(stem(r[i]+r[i+1]))){hitW.add(stem(r[i]));hitW.add(stem(r[i+1]))}}
+  let hit=0,tot=0;
+  qw.forEach(w=>{const v=idf[w]||1;tot+=v;if(hitW.has(w))hit+=v});
   return tot?hit/tot:0;
 }
 function findAnswer(text){
   const qw=[...new Set(words(text))];if(!qw.length)return null;
   let best=null,bs=0;
-  mat.cards.forEach(c=>{const s=Math.max(score(qw,words(c.q)),score(qw,words(c.q+" "+c.a))*0.85);if(s>bs){bs=s;best=c.a}});
+  mat.cards.forEach(c=>{const v=Math.max(score(text,qw,c.q),score(text,qw,c.q+" "+c.a)*0.85);if(v>bs){bs=v;best=c.a}});
   if(bs>=0.45)return best;
   let fb=null,fs=0;
-  mat.facts.forEach(f=>{const s=score(qw,words(f));if(s>fs){fs=s;fb=f}});
-  if(fs>=0.5&&fs>bs)return fb;
+  mat.facts.forEach(f=>{const v=score(text,qw,f);if(v>fs){fs=v;fb=f}});
+  if(fs>=0.4&&fs>bs)return fb;
   return bs>=0.34?best:null;
 }
-
 /* ---------- adding material ---------- */
 function ingest(raw){
   raw=raw.trim();if(!raw)return 0;
@@ -157,6 +165,8 @@ function ingest(raw){
   }
   const lines=raw.split(/\n/);let q=null;const rest=[];
   lines.forEach(l=>{
+    const one=l.match(/^\s*Q(?:uestion)?\s*[:.)\-]\s*(.+?)\s+A(?:nswer)?\s*[:.)\-]\s*(.+)$/i);
+    if(one){mat.cards.push({q:one[1].trim(),a:one[2].trim()});added++;q=null;return}
     const m=l.match(/^\s*(Q|A|Question|Answer)\s*[:.)\-]\s*(.+)/i);
     if(m){const k=m[1][0].toUpperCase();if(k==="Q")q=m[2].trim();else if(q){mat.cards.push({q,a:m[2].trim()});q=null;added++}}
     else rest.push(l);
@@ -241,7 +251,7 @@ let rec=null,listening=false;
 function setMic(on,text,bad){
   $("micDot").className="dot"+(on?" on":"");
   $("micText").textContent=text;$("micText").style.color=bad?"var(--bad)":"";
-  $("listenBtn").textContent=on?"Stop listening":"🎧 Start listening";
+  $("listenBtn").textContent=on?"Stop listening":"🎧 Hands-free listening (if your phone allows it)";
 }
 const ERR={
   "not-allowed":"Microphone permission was refused. In Safari tap the page menu → Website Settings → Microphone → Allow, then reload.",
