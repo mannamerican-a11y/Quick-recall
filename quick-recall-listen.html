@@ -1,0 +1,350 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Quick Recall Listen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one-column study-hall app; tabs (Build / Guide / Play) under a gold-trimmed header; the countdown ring is the hero of Play. */
+:root{
+  --forest:#0f2a1f; --forest-2:#163a2b; --forest-3:#1e4a37;
+  --grey:#a9b4ae; --grey-dim:#6f7d76; --ink:#eef2ef;
+  --gold:#c9a54c; --gold-soft:rgba(201,165,76,.18);
+  --win:#7fcf9a; --miss:#e08a6d;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+html,body{margin:0}
+html,body{background:var(--forest);color:var(--ink)}
+body{font-family:var(--body);font-size:16px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{padding-top:20px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:1px solid var(--gold);padding-bottom:14px}
+.brand{font-family:var(--display);font-weight:800;font-size:2rem;letter-spacing:-.02em;line-height:1}
+.brand span{color:var(--gold)}
+.tag{font-size:.8rem;color:var(--grey);text-transform:uppercase;letter-spacing:.12em}
+nav{display:flex;gap:6px;background:var(--forest-2);border:1px solid var(--forest-3);border-radius:999px;padding:4px}
+nav button{flex:1;border:0;background:transparent;color:var(--grey);font:600 .95rem var(--body);padding:10px 8px;border-radius:999px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--forest-3);color:var(--ink);box-shadow:inset 0 0 0 1px var(--gold)}
+h2{font-family:var(--display);font-weight:600;font-size:1.35rem;margin:0;text-wrap:balance}
+.muted{color:var(--grey);font-size:.92rem}
+.panel{background:var(--forest-2);border:1px solid var(--forest-3);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.panel.trim{border-color:var(--gold)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{appearance:none;border:1px solid var(--gold);background:transparent;color:var(--gold);font:600 1rem var(--body);padding:12px 16px;border-radius:10px;cursor:pointer;min-height:48px}
+.btn.solid{background:var(--gold);color:var(--forest)}
+.btn.ghost{border-color:var(--grey-dim);color:var(--grey)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,nav button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.grow{flex:1 1 140px}
+input[type=text],textarea,select{width:100%;box-sizing:border-box;background:var(--forest);border:1px solid var(--forest-3);color:var(--ink);font:inherit;border-radius:10px;padding:12px}
+textarea{min-height:110px;resize:vertical}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
+.thumb{position:relative;aspect-ratio:3/4;border-radius:8px;overflow:hidden;border:1px solid var(--forest-3);max-width:100%}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:var(--ink);cursor:pointer}
+.status{font-size:.9rem;color:var(--grey);min-height:1.4em}
+.status.err{color:var(--miss)}
+.example{display:inline-block;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:2px 8px}
+.outline h3{font-family:var(--display);font-weight:600;font-size:1.05rem;margin:0 0 4px;color:var(--gold)}
+.outline ul{margin:0;padding-left:20px;color:var(--ink)}
+.outline section+section{margin-top:14px}
+.cards{display:flex;flex-direction:column;gap:8px}
+.card{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;padding:12px;border-radius:10px;background:var(--forest);border:1px solid var(--forest-3)}
+.card b{font-family:var(--mono);font-size:.75rem;color:var(--gold);padding-top:3px}
+.card .q{font-weight:600;min-width:0}
+.card .a{grid-column:2;color:var(--grey);min-width:0}
+.card .miss{grid-column:2;font-size:.78rem;color:var(--miss)}
+/* Play */
+.score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;text-align:center;gap:8px}
+.score .n{font-family:var(--mono);font-weight:700;font-size:2.2rem;font-variant-numeric:tabular-nums;line-height:1}
+.score .l{font-size:.75rem;text-transform:uppercase;letter-spacing:.12em;color:var(--grey)}
+.score .vs{font-family:var(--display);color:var(--gold)}
+.ringbox{display:grid;place-items:center;position:relative;padding:6px 0}
+.ringbox svg{width:min(220px,60vw);height:auto;max-width:100%}
+.ring-bg{fill:none;stroke:var(--forest-3);stroke-width:10}
+.ring{fill:none;stroke:var(--gold);stroke-width:10;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%}
+.ring-num{position:absolute;font-family:var(--mono);font-weight:700;font-size:3.2rem;font-variant-numeric:tabular-nums}
+.heard{text-align:center;min-height:3em}
+.heard .q{font-family:var(--display);font-weight:600;font-size:1.25rem;text-wrap:balance}
+.answer{border:1px solid var(--gold);background:var(--gold-soft);border-radius:12px;padding:14px;text-align:center;font-size:1.15rem;font-weight:600}
+.result{text-align:center;font-weight:600}
+.result.win{color:var(--win)} .result.lose{color:var(--miss)}
+.mic{display:flex;align-items:center;gap:10px;justify-content:center;font-size:.9rem;color:var(--grey)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--grey-dim)}
+.dot.on{background:var(--win);box-shadow:0 0 0 0 rgba(127,207,154,.6);animation:pulse 1.4s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 10px rgba(127,207,154,0)}100%{box-shadow:0 0 0 0 rgba(127,207,154,0)}}
+@media (prefers-reduced-motion:reduce){.dot.on{animation:none}}
+.bigwin{min-height:72px;font-size:1.2rem}
+.settings{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.9rem;color:var(--grey)}
+.settings label{display:flex;align-items:center;gap:6px}
+.settings select{width:auto;padding:8px}
+</style></head><body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="brand">Quick <span>Recall</span></div>
+      <div class="tag">Listening mode</div>
+    </div>
+  </header>
+
+  <nav role="tablist">
+    <button role="tab" id="tab-build" aria-selected="false" data-view="build">Build</button>
+    <button role="tab" id="tab-guide" aria-selected="false" data-view="guide">Guide</button>
+    <button role="tab" id="tab-play" aria-selected="true" data-view="play">Play</button>
+  </nav>
+
+  <!-- BUILD -->
+  <main id="view-build" hidden>
+    <div class="wrap">
+      <div class="panel trim">
+        <h2>Load your guide</h2>
+        <p class="muted" style="margin:0">In Quick Recall, open Guide and tap “Copy guide for the listening app”. Paste the code here. You can also type questions as Q: and A: lines.</p>
+        <textarea id="importBox" placeholder="Paste the QR1: code, or&#10;Q: What is the powerhouse of the cell?&#10;A: The mitochondria"></textarea>
+        <input id="title" type="text" placeholder="Guide name (for typed Q&amp;A)">
+        <button class="btn solid" id="importBtn">Load guide</button>
+        <div class="status" id="buildStatus"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- GUIDE -->
+  <main id="view-guide" hidden>
+    <div class="wrap">
+      <div class="panel">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 id="guideTitle">Study guide</h2>
+          <span class="example" id="exampleTag">Example</span>
+        </div>
+        <div class="outline" id="outline"></div>
+      </div>
+      <div class="panel">
+        <h2>Quiz cards</h2>
+        <div class="cards" id="cards"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- PLAY -->
+  <main id="view-play">
+    <div class="wrap">
+      <div class="panel trim">
+        <div class="score">
+          <div><div class="n" id="youScore">0</div><div class="l">You</div></div>
+          <div class="vs">vs</div>
+          <div><div class="n" id="appScore">0</div><div class="l">Quick Recall</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="mic"><span class="dot" id="micDot"></span><span id="micText">Tap Start listening, then have your partner ask a question.</span></div>
+        <div class="row">
+          <button class="btn solid grow" id="listenBtn">🎧 Start listening</button>
+        </div>
+        <div class="settings">
+          <label for="secs">Countdown
+            <select id="secs"><option>3</option><option selected>5</option><option>8</option><option>10</option></select> sec
+          </label>
+          <label for="speak"><input type="checkbox" id="speak" checked> Say the answer out loud</label>
+        </div>
+      </div>
+
+      <div class="panel trim">
+        <div class="heard" id="heard"><div class="muted">Waiting for a question…</div></div>
+        <div class="ringbox">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="50"></circle>
+            <circle class="ring" id="ring" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="0"></circle>
+          </svg>
+          <div class="ring-num" id="ringNum">–</div>
+        </div>
+        <button class="btn solid bigwin" id="gotIt" disabled>I said it first!</button>
+        <div class="answer" id="answer" hidden></div>
+        <div class="result" id="result"></div>
+      </div>
+
+      <div class="panel">
+        <label for="typed" class="muted">Partner can also type or pick a question</label>
+        <div class="row">
+          <input id="typed" type="text" class="grow" placeholder="Type a few words of the question">
+          <button class="btn" id="askBtn">Ask</button>
+        </div>
+        <div class="row">
+          <button class="btn ghost grow" id="randomBtn">Random question</button>
+          <button class="btn ghost grow" id="weakBtn">Review missed</button>
+          <button class="btn ghost" id="resetBtn">Reset score</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const EXAMPLE = {
+  example:true,
+  title:"Biology – The Cell",
+  outline:[
+    {heading:"Cell structure",points:["The cell membrane controls what enters and leaves","The nucleus holds the cell's DNA","Ribosomes build proteins"]},
+    {heading:"Energy",points:["Mitochondria make ATP through cellular respiration","Chloroplasts run photosynthesis in plant cells"]},
+    {heading:"Cell types",points:["Prokaryotes have no nucleus (bacteria)","Eukaryotes have a nucleus (plants, animals, fungi)"]}
+  ],
+  cards:[
+    {q:"What is the powerhouse of the cell?",a:"The mitochondria"},
+    {q:"Where is the cell's DNA stored?",a:"In the nucleus"},
+    {q:"What part of the cell builds proteins?",a:"Ribosomes"},
+    {q:"What controls what enters and leaves the cell?",a:"The cell membrane"},
+    {q:"Where does photosynthesis happen?",a:"In the chloroplasts"},
+    {q:"What kind of cell has no nucleus?",a:"A prokaryote, like bacteria"}
+  ]
+};
+let deck = load("qr_deck") || EXAMPLE;
+let stats = load("qr_stats") || {you:0,app:0,miss:{}};
+let photos = [];
+
+function load(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+
+/* Tabs */
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>show(b.dataset.view));
+function show(v){
+  document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.view===v));
+  ["build","guide","play"].forEach(x=>$("view-"+x).hidden=x!==v);
+  if(v==="guide")renderGuide();
+}
+
+/* Guide */
+function renderGuide(){
+  $("guideTitle").textContent=deck.title||"Study guide";
+  $("exampleTag").hidden=!deck.example;
+  const o=$("outline");o.innerHTML="";
+  (deck.outline||[]).forEach(s=>{
+    const sec=document.createElement("section");
+    const h=document.createElement("h3");h.textContent=s.heading;sec.append(h);
+    const ul=document.createElement("ul");
+    (s.points||[]).forEach(p=>{const li=document.createElement("li");li.textContent=p;ul.append(li)});
+    sec.append(ul);o.append(sec);
+  });
+  const c=$("cards");c.innerHTML="";
+  deck.cards.forEach((cd,i)=>{
+    const d=document.createElement("div");d.className="card";
+    const n=document.createElement("b");n.textContent=String(i+1).padStart(2,"0");
+    const q=document.createElement("div");q.className="q";q.textContent=cd.q;
+    const a=document.createElement("div");a.className="a";a.textContent=cd.a;
+    d.append(n,q,a);
+    const m=stats.miss[cd.q];
+    if(m){const x=document.createElement("div");x.className="miss";x.textContent="Missed "+m+"×";d.append(x)}
+    c.append(d);
+  });
+}
+
+/* Import */
+$("importBtn").onclick=()=>{
+  const raw=$("importBox").value.trim(),st=$("buildStatus");st.className="status";
+  try{
+    let d;
+    if(raw.startsWith("QR1:")){d=JSON.parse(decodeURIComponent(escape(atob(raw.slice(4).trim()))))}
+    else{
+      const cards=[];let q=null;
+      raw.split(/\n/).forEach(l=>{const m=l.match(/^\s*(Q|A)\s*[:.)-]\s*(.+)/i);if(!m)return;
+        if(m[1].toUpperCase()==="Q")q=m[2].trim();else if(q){cards.push({q,a:m[2].trim()});q=null}});
+      d={title:$("title").value.trim()||"My study guide",outline:[],cards};
+    }
+    if(!d||!Array.isArray(d.cards)||!d.cards.length)throw 0;
+    deck={title:d.title||"My study guide",outline:d.outline||[],cards:d.cards.filter(c=>c&&c.q&&c.a)};
+    stats={you:0,app:0,miss:{}};save("qr_deck",deck);save("qr_stats",stats);renderScore();
+    st.textContent=deck.cards.length+" cards loaded.";$("importBox").value="";show("guide");
+  }catch(e){st.textContent="Couldn't read that. Paste the full QR1: code, or use Q: and A: lines.";st.className="status err"}
+};
+
+/* Matching */
+const STOP=new Set("the a an of is are was were what which who whom whose where when why how do does did to in on at for by with from and or that this these those it its be can could would should will name tell me you your".split(" "));
+function words(s){return s.toLowerCase().replace(/[^a-z0-9\s']/g," ").split(/\s+/).filter(w=>w&&!STOP.has(w)).map(w=>w.replace(/'s$/,"").replace(/s$/,""))}
+function match(text){
+  const t=new Set(words(text));if(!t.size)return null;
+  let best=null,bs=0;
+  deck.cards.forEach(c=>{
+    const q=words(c.q);if(!q.length)return;
+    let hit=0;q.forEach(w=>{if(t.has(w))hit++});
+    const s=hit/q.length;
+    if(s>bs){bs=s;best=c}
+  });
+  return bs>=0.4?best:null;
+}
+
+/* Round */
+let round=null,timer=null;
+const C=314.16;
+function renderScore(){$("youScore").textContent=stats.you;$("appScore").textContent=stats.app}
+function startRound(card){
+  if(round&&!round.done)return;
+  clearInterval(timer);
+  const secs=+$("secs").value;
+  round={card,end:Date.now()+secs*1000,secs,done:false};
+  $("heard").innerHTML="";const q=document.createElement("div");q.className="q";q.textContent=card.q;$("heard").append(q);
+  $("answer").hidden=true;$("result").textContent="";$("result").className="result";
+  $("gotIt").disabled=false;
+  tick();timer=setInterval(tick,100);
+}
+function tick(){
+  const left=Math.max(0,round.end-Date.now());
+  $("ringNum").textContent=Math.ceil(left/1000);
+  $("ring").style.strokeDashoffset=C*(1-left/(round.secs*1000));
+  if(left<=0)finish(false);
+}
+function finish(won){
+  if(!round||round.done)return;
+  round.done=true;clearInterval(timer);
+  $("gotIt").disabled=true;
+  $("answer").textContent=round.card.a;$("answer").hidden=false;
+  if(won){stats.you++;$("result").textContent="You beat it! Check your answer above.";$("result").className="result win"}
+  else{stats.app++;stats.miss[round.card.q]=(stats.miss[round.card.q]||0)+1;$("result").textContent="Quick Recall got there first.";$("result").className="result lose";
+    if($("speak").checked&&"speechSynthesis" in window){try{speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(round.card.a))}catch(e){}}}
+  if(won){$("ringNum").textContent="✓"}else{$("ringNum").textContent="0"}
+  save("qr_stats",stats);renderScore();
+}
+$("gotIt").onclick=()=>finish(true);
+
+function askText(text){
+  const c=match(text);
+  if(c)startRound(c);
+  else{$("heard").innerHTML="";const d=document.createElement("div");d.className="muted";d.textContent="Heard “"+text+"” but couldn't match it to a card.";$("heard").append(d)}
+}
+$("askBtn").onclick=()=>{const v=$("typed").value.trim();if(v){if(round)round.done=true;askText(v);$("typed").value=""}};
+$("typed").onkeydown=e=>{if(e.key==="Enter")$("askBtn").click()};
+$("randomBtn").onclick=()=>{if(round)round.done=true;startRound(deck.cards[Math.floor(Math.random()*deck.cards.length)])};
+$("weakBtn").onclick=()=>{
+  const missed=deck.cards.filter(c=>stats.miss[c.q]).sort((a,b)=>stats.miss[b.q]-stats.miss[a.q]);
+  if(!missed.length){$("heard").innerHTML='<div class="muted">No missed questions yet.</div>';return}
+  if(round)round.done=true;startRound(missed[Math.floor(Math.random()*Math.min(3,missed.length))]);
+};
+$("resetBtn").onclick=()=>{stats={you:0,app:0,miss:{}};save("qr_stats",stats);renderScore()};
+
+/* Listening */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,listening=false;
+function setMic(on,text){$("micDot").className="dot"+(on?" on":"");$("micText").textContent=text;$("listenBtn").textContent=on?"Stop listening":"🎧 Start listening"}
+$("listenBtn").onclick=()=>{
+  if(listening){listening=false;try{rec&&rec.stop()}catch(e){}setMic(false,"Mic off.");return}
+  if(!SR){setMic(false,"This browser can't listen. Your partner can type or pick the question below.");return}
+  try{
+    rec=new SR();rec.continuous=true;rec.interimResults=false;rec.lang="en-US";
+    rec.onresult=e=>{
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal){const t=e.results[i][0].transcript.trim();if(t&&(!round||round.done))askText(t)}
+      }
+    };
+    rec.onerror=e=>{
+      if(e.error==="not-allowed"||e.error==="service-not-allowed"){listening=false;setMic(false,"Microphone access is blocked here. Your partner can type or pick the question below.")}
+    };
+    rec.onend=()=>{if(listening){try{rec.start()}catch(e){}}};
+    rec.start();listening=true;
+    setMic(true,"Listening through your phone or earphone mic…");
+  }catch(e){listening=false;setMic(false,"Couldn't start the mic. Your partner can type or pick the question below.")}
+};
+
+renderScore();
+})();
+</script>
+
+</body></html>
